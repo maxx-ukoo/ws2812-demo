@@ -5,3 +5,6 @@ on the ESP32. It uses interrupts from the RMT peripheral to keep the
 buffer filled until all the bytes have been sent to the LED array.
 
 For more information see http://insentricity.com/a.cl/268
+
+
+Effects added from https://www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/

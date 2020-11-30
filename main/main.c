@@ -14,84 +14,59 @@
 #include <driver/gpio.h>
 #include <stdio.h>
 #include "ws2812.h"
+#include "ledstrip_effect.h"
 
-#define WS2812_PIN	18
+#include "esp_log.h"
+
+static const char *TAG = "main";
+
+
+#define WS2812_PIN 15
+#define LED_COUNT 150 // Number of your "pixels"
+
+rgbVal *pixels;
 
 #define delay_ms(ms) vTaskDelay((ms) / portTICK_RATE_MS)
 
-void rainbow(void *pvParameters)
-{
-  const uint8_t anim_step = 10;
-  const uint8_t anim_max = 250;
-  const uint8_t pixel_count = 64; // Number of your "pixels"
-  const uint8_t delay = 25; // duration between color changes
-  rgbVal color = makeRGBVal(anim_max, 0, 0);
-  uint8_t step = 0;
-  rgbVal color2 = makeRGBVal(anim_max, 0, 0);
-  uint8_t step2 = 0;
-  rgbVal *pixels;
-
-
-  pixels = malloc(sizeof(rgbVal) * pixel_count);
-
+void random_effects(void *pvParameters){
   while (1) {
-    color = color2;
-    step = step2;
-
-    for (uint8_t i = 0; i < pixel_count; i++) {
-      pixels[i] = color;
-
-      if (i == 1) {
-        color2 = color;
-        step2 = step;
-      }
-
-      switch (step) {
-      case 0:
-        color.g += anim_step;
-        if (color.g >= anim_max)
-          step++;
-        break;
-      case 1:
-        color.r -= anim_step;
-        if (color.r == 0)
-          step++;
-        break;
-      case 2:
-        color.b += anim_step;
-        if (color.b >= anim_max)
-          step++;
-        break;
-      case 3:
-        color.g -= anim_step;
-        if (color.g == 0)
-          step++;
-        break;
-      case 4:
-        color.r += anim_step;
-        if (color.r >= anim_max)
-          step++;
-        break;
-      case 5:
-        color.b -= anim_step;
-        if (color.b == 0)
-          step = 0;
-        break;
-      }
-    }
-
-    ws2812_setColors(pixel_count, pixels);
-
-    delay_ms(delay);
+    ESP_LOGI(TAG, "cylonBounce");
+    cylonBounce(pixels, LED_COUNT, 0xff, 0, 0, 4, 10, 50);
+    ESP_LOGI(TAG, "colorWipe");
+    colorWipe(pixels, LED_COUNT, 0xff, 0x00, 0x00, 50);
+    colorWipe(pixels, LED_COUNT, 0x00, 0x00, 0x00, 50);
+    ESP_LOGI(TAG, "meteorRain");
+    meteorRain(pixels, LED_COUNT, 0xff, 0x40, 0x00, 5, 64, true, 10);
+    ESP_LOGI(TAG, "rainbowCycle");
+    rainbowCycle(pixels, LED_COUNT, 10);
+    ESP_LOGI(TAG, "RGBLoop");
+    RGBLoop(pixels, LED_COUNT, 5);
+    /*if (count == 0) {
+        red = 0x00;
+        green = 0xff;
+        count = 1;
+      } else if (count == 1)
+      {
+        blue = 0xff;
+        green = 0x00;
+        count = 2;
+      } else {
+        red = 0xff;
+        blue = 0x00;
+        count = 0;
+      }*/
   }
 }
 
 void app_main()
 {
   nvs_flash_init();
-
   ws2812_init(WS2812_PIN);
-  xTaskCreate(rainbow, "ws2812 rainbow demo", 4096, NULL, 10, NULL);
-
+  pixels = malloc(sizeof(rgbVal) * LED_COUNT);
+  //xTaskCreate(rainbow, "ws2812 rainbow", 4096, NULL, 10, NULL);
+  //xTaskCreate(cylon_bounce, "ws2812 cylon_bounce", 4096, NULL, 10, NULL);
+  //xTaskCreate(color_wipe, "ws2812 color_wipe", 4096, NULL, 10, NULL);
+  xTaskCreate(random_effects, "ws2812 random_effects", 4096, NULL, 10, NULL);
+  
   return;
 }
